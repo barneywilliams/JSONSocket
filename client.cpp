@@ -41,7 +41,6 @@ void Client::onRequest()
     }
     qout << request << endl;
     QString response = "Howdy there server!";
-    //stream.writeBytes(response.toAscii(), response.size());
     stream << response << endl;
     qDebug() << "Response sent!";
 }
