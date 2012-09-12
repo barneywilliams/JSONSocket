@@ -8,6 +8,7 @@ QT_BEGIN_NAMESPACE
 class QTextStream;
 class QObject;
 class QTcpSocket;
+class QDataStream;
 QT_END_NAMESPACE
 
 class Client : public QObject
@@ -16,17 +17,18 @@ class Client : public QObject
 
 public:
     Client();
-    void requestNewFortune();
+    void start();
 
 private slots:
-    void readFortune();
+    void onRequest();
     void displayError(QAbstractSocket::SocketError socketError);
 
 private:
 
+    void stop();
+
     QTextStream qout;
     QTcpSocket *tcpSocket;
-    QString currentFortune;
     quint16 blockSize;
 };
 

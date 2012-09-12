@@ -11,47 +11,40 @@ Client::Client()
     qout << "JSON client started!" << endl;
 
     tcpSocket = new QTcpSocket(this);
-    connect(tcpSocket, SIGNAL(readyRead()), this, SLOT(readFortune()));
+    connect(tcpSocket, SIGNAL(readyRead()), this, SLOT(onRequest()));
     connect(tcpSocket, SIGNAL(error(QAbstractSocket::SocketError)),
             this, SLOT(displayError(QAbstractSocket::SocketError)));
 }
 
-void Client::requestNewFortune()
+void Client::start()
 {
-    blockSize = 0;
-    tcpSocket->abort();
     tcpSocket->connectToHost("localhost", 19024);
 }
 
-void Client::readFortune()
+void Client::stop()
 {
-    QDataStream in(tcpSocket);
+    tcpSocket->close();
+}
 
-    // Start by reading the block size from the message
-    if (blockSize == 0)
+void Client::onRequest()
+{
+    qDebug() << "Request received!";
+    QDataStream stream(tcpSocket);
+    int count = tcpSocket->bytesAvailable();
+    if (count)
     {
-        if (tcpSocket->bytesAvailable() < (int)sizeof(quint16))
-            return;
-        in >> blockSize;
+        char buf[100];
+        stream.readRawData(buf, count);
+        buf[count] = '\0';
+        qout << buf << endl;
+        QString response = "Howdy there server!\n";
+        stream.writeBytes(response.toAscii(), response.size());
+        qDebug() << "Response sent!";
     }
-
-    // Return if the complete message is not yet available
-    if (tcpSocket->bytesAvailable() < blockSize)
-        return;
-
-    // Read in the complete fortune
-    QString nextFortune;
-    in >> nextFortune;
-
-    // Request the next fortune to start the transimission
-    if (nextFortune == currentFortune)
+    else
     {
-        QTimer::singleShot(0, this, SLOT(requestNewFortune()));
-        return;
+        qDebug() << "No data received!";
     }
-
-    currentFortune = nextFortune;
-    qout << currentFortune << endl;
 }
 
 void Client::displayError(QAbstractSocket::SocketError socketError)
@@ -59,6 +52,7 @@ void Client::displayError(QAbstractSocket::SocketError socketError)
     switch (socketError)
     {
     case QAbstractSocket::RemoteHostClosedError:
+        stop();
         break;
     case QAbstractSocket::HostNotFoundError:
         qout << "The host was not found. Please check the host name and port settings." << endl;
