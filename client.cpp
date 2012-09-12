@@ -29,22 +29,21 @@ void Client::stop()
 void Client::onRequest()
 {
     qDebug() << "Request received!";
-    QDataStream stream(tcpSocket);
-    int count = tcpSocket->bytesAvailable();
-    if (count)
+    QTextStream stream(tcpSocket);
+    QString request = "";
+    int count = tcpSocket->bytesAvailable() - 1;
+    while (count)
     {
-        char buf[100];
-        stream.readRawData(buf, count);
-        buf[count] = '\0';
-        qout << buf << endl;
-        QString response = "Howdy there server!\n";
-        stream.writeBytes(response.toAscii(), response.size());
-        qDebug() << "Response sent!";
+        QString chunk;
+        stream >> chunk;
+        request += chunk;
+        count -= chunk.length();
     }
-    else
-    {
-        qDebug() << "No data received!";
-    }
+    qout << request << endl;
+    QString response = "Howdy there server!";
+    //stream.writeBytes(response.toAscii(), response.size());
+    stream << response << endl;
+    qDebug() << "Response sent!";
 }
 
 void Client::displayError(QAbstractSocket::SocketError socketError)
