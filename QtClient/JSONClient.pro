@@ -4,7 +4,7 @@
 #
 #-------------------------------------------------
 
-QT       += core network
+QT       += core network script
 QT       -= gui
 
 TARGET = JSONClient

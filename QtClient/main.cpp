@@ -6,6 +6,6 @@ int main(int argc, char *argv[])
 {
     QCoreApplication app(argc, argv);
     Client* client = new Client();
-    client->start();
+    client->Start();
     return app.exec();
 }
