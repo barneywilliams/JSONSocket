@@ -1,3 +1,5 @@
 JSONClient.pbproj/
 JSONClient.pro.user
 .DS_Store
+QtClient/moc_*
+QtClient/*.o

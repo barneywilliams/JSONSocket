@@ -23,7 +23,6 @@ public:
    ~Client(){};
    void Start();
    void Stop();
-   int NumRequestsProcessed();
 
 
 private slots:
@@ -33,10 +32,13 @@ private slots:
    void DisplayError(QAbstractSocket::SocketError socketError);
 
 private:
+   QString CommandResponse(QString cmd, QString msg);
+   QString CommandErrorResponse(QString cmd, QString msg);
+   QString CreateResponse(QString type, QString cmd, QString msg);
 
    QTextStream qout;
    QTcpSocket *tcpSocket;
-   int m_NumRequestsProcessed;
+   bool shutdownRequested;
 };
 
 #endif

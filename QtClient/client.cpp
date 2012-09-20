@@ -1,15 +1,14 @@
 #include <QTextStream>
 #include <QScriptEngine>
 #include <QScriptValue>
+#include <QCoreApplication>
 #include <iostream>
 
 #include "client.h"
 
 Client::Client()
-    : QObject(0), qout(stdout), tcpSocket(NULL), m_NumRequestsProcessed(0)
+    : QObject(0), qout(stdout), tcpSocket(NULL), shutdownRequested(false)
 {
-    qout << "client: JSON client created!" << endl;
-
     tcpSocket = new QTcpSocket(this);
     Q_ASSERT(connect(tcpSocket, SIGNAL(hostFound()), this, SLOT(OnHostFound())));
     Q_ASSERT(connect(tcpSocket, SIGNAL(readyRead()), this, SLOT(ProcessRequest())));
@@ -25,17 +24,13 @@ void Client::Start()
 
 void Client::Stop()
 {
+    tcpSocket->waitForBytesWritten(200);
     tcpSocket->close();
 }
 
 void Client::OnHostFound()
 {
-    qout << "client: Found host!";
-}
-
-int Client::NumRequestsProcessed()
-{
-    return m_NumRequestsProcessed;
+    qout << "client: Found host!" << endl;
 }
 
 void Client::ProcessRequest(void)
@@ -44,11 +39,13 @@ void Client::ProcessRequest(void)
     QScriptEngine engine;
     QString response;
 
+    qout << "client: << " << request << endl;
+
     // Validate that the request was parsed and non-empty
     QScriptValue data = engine.evaluate("(" + QString(request) + ")");
     if (!data.isNull() && !data.isValid())
     {
-        qout << "client: Empty/malformed message received from server!";
+        qout << "client: Empty/malformed message received from server!" << endl;
     }
     else
     {
@@ -56,7 +53,7 @@ void Client::ProcessRequest(void)
         QScriptValue req = data.property("request");
         if (!req.isValid())
         {
-            qout << "client: Invalid request received from server!";
+            qout << "client: Invalid request received from server!" << endl;
         }
 
         // Process command
@@ -70,10 +67,30 @@ void Client::ProcessRequest(void)
     if (response.length() > 0)
     {
         tcpSocket->write(response.toAscii());
-        qout << response << endl;
+        qout << "client: >> " << response << endl;
     }
 
-    m_NumRequestsProcessed += 1;
+    if (shutdownRequested)
+    {
+        Stop();
+        qout << "client: Shutting down per request..." << endl;
+        QCoreApplication::exit(0);
+    }
+}
+
+QString Client::CreateResponse(QString type, QString cmd, QString msg)
+{
+    return "{\"" + type + "\":{\"command\":\"" + cmd + "\",\"message\":\"" + msg + "\"}}";
+}
+
+QString Client::CommandResponse(QString cmd, QString msg)
+{
+    return CreateResponse("response", cmd, msg);
+}
+
+QString Client::CommandErrorResponse(QString cmd, QString msg)
+{
+    return CreateResponse("error", cmd, msg);
 }
 
 QString Client::ProcessCommand(QScriptValue req)
@@ -81,31 +98,38 @@ QString Client::ProcessCommand(QScriptValue req)
     QScriptValue cmd = req.property("command");
     QString response;
 
+    // Basic sanity check
     if (!cmd.isValid())
     {
-        response = "{\"error\": {\"command\": \"invalid\", \"message\": \"No command specified\"}}";
-        return response;
+        response = CommandErrorResponse("invalid", "No command specified");
     }
 
     // Process greeting
-    if (cmd.toString() == "greeting")
+    else if (cmd.toString() == "greeting")
     {
         QScriptValue message = req.property("message");
 
         if (!message.isValid())
         {
-            response = "{\"error\": {\"command\": \"greeting\", \"message\": \"No message specified\"}}";
+            response = CommandErrorResponse("greeting", "No message specified");
         }
         else
         {
-            response = "{\"response\": {\"command\": \"greeting\", \"message\": \"Client reporting for duty!\"}}";
+            response = CommandResponse("greeting", "Client reporting for duty.");
         }
+    }
+
+    // Process shutdown request
+    else if (cmd.toString() == "shutdown")
+    {
+        response = CommandResponse("shutdown", "Goodbye!");
+        shutdownRequested = true;
     }
 
     // Handle unrecognized requests
     else
     {
-        response = "{\"error\": {\"command\": \"invalid\", \"message\": \"Unknown request specified\"}}";
+        response = CommandErrorResponse("invalid", "Unsupported command specified");
     }
 
     return response;
