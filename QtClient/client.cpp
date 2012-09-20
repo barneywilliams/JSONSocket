@@ -78,21 +78,6 @@ void Client::ProcessRequest(void)
     }
 }
 
-QString Client::CreateResponse(QString type, QString cmd, QString msg)
-{
-    return "{\"" + type + "\":{\"command\":\"" + cmd + "\",\"message\":\"" + msg + "\"}}";
-}
-
-QString Client::CommandResponse(QString cmd, QString msg)
-{
-    return CreateResponse("response", cmd, msg);
-}
-
-QString Client::CommandErrorResponse(QString cmd, QString msg)
-{
-    return CreateResponse("error", cmd, msg);
-}
-
 QString Client::ProcessCommand(QScriptValue req)
 {
     QScriptValue cmd = req.property("command");
@@ -133,6 +118,21 @@ QString Client::ProcessCommand(QScriptValue req)
     }
 
     return response;
+}
+
+QString Client::CommandResponse(QString cmd, QString msg)
+{
+    return CreateResponse("response", cmd, msg);
+}
+
+QString Client::CommandErrorResponse(QString cmd, QString msg)
+{
+    return CreateResponse("error", cmd, msg);
+}
+
+QString Client::CreateResponse(QString type, QString cmd, QString msg)
+{
+    return "{\"" + type + "\":{\"command\":\"" + cmd + "\",\"message\":\"" + msg + "\"}}";
 }
 
 void Client::DisplayError(QAbstractSocket::SocketError socketError)

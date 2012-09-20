@@ -24,7 +24,6 @@ public:
    void Start();
    void Stop();
 
-
 private slots:
    void OnHostFound();
    void ProcessRequest();
