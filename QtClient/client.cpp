@@ -39,7 +39,7 @@ void Client::ProcessRequest(void)
     QScriptEngine engine;
     QString response;
 
-    qout << "client: << " << request << endl;
+    // qout << "client: << " << request << endl;
 
     // Validate that the request was parsed and non-empty
     QScriptValue data = engine.evaluate("(" + QString(request) + ")");
@@ -67,7 +67,7 @@ void Client::ProcessRequest(void)
     if (response.length() > 0)
     {
         tcpSocket->write(response.toAscii());
-        qout << "client: >> " << response << endl;
+        // qout << "client: >> " << response << endl;
     }
 
     if (shutdownRequested)
@@ -100,7 +100,7 @@ QString Client::ProcessCommand(QScriptValue req)
         }
         else
         {
-            response = CommandResponse("greeting", "Client reporting for duty.");
+            response = CommandResponse("greeting", "Hello server. Hope things are well!");
         }
     }
 

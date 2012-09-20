@@ -11,7 +11,7 @@ class JSONServer
       @server_thread = Thread.new do
          @client_thread = Thread.start(@server.accept) do |client|
             puts "server: Accepted client connection!"
-            send_request(client, 'greeting', :message => 'Hello server!')
+            send_request(client, 'greeting', :message => 'Hello client!')
             receive_response(client)
             send_request(client, 'shutdown')
             receive_response(client)
@@ -31,13 +31,17 @@ class JSONServer
       data['request'].merge!(args)
       request = JSON.generate(data)
       client.print request
-      puts "server: >> #{request}"
+      if args[:message]
+         puts "server: >> #{args[:message]}"
+      end
    end
 
    def receive_response(client)
       response = client.recv(1024)
-      puts "server: << #{response}"
       data = JSON.parse(response)
+      if data['response'] && data['response']['message']
+         puts "server: << #{data['response']['message']}"
+      end
       return data
    end
 
